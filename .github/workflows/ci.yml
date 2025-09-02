@@ -60,15 +60,20 @@ jobs:
           ruby-version: '3.3.6'
           bundler-cache: true
 
+      - name: Configure Bundler
+        run: |
+          bundle config set --local frozen false
+          bundle config set --local deployment false
+
       - name: Install dependencies
         run: |
           gem install bundler
           bundle install
 
-      - name: Run RuboCop (if configured)
+      - name: Run RuboCop
         run: |
           if [ -f ".rubocop.yml" ]; then
-            bundle exec rubocop
+            bundle exec rubocop --parallel
           else
             echo "No RuboCop configuration found, skipping linting"
           fi
@@ -76,7 +81,14 @@ jobs:
 
       - name: Check gem syntax
         run: |
+          echo "Checking Ruby file syntax..."
           ruby -c lib/session_recorder/version.rb
           ruby -c lib/session_recorder/constants.rb
           ruby -c lib/session_recorder/exporters.rb
           echo "All Ruby files have valid syntax"
+
+      - name: Verify gemspec
+        run: |
+          echo "Verifying gemspec..."
+          ruby -c multiplayer_otlp.gemspec
+          echo "Gemspec syntax is valid"

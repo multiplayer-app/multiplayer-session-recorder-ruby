@@ -58,6 +58,11 @@ jobs:
           git commit -m "chore: bump version to ${{ steps.version.outputs.version }}"
           git push origin main
 
+      - name: Configure Bundler
+        run: |
+          bundle config set --local frozen false
+          bundle config set --local deployment false
+
       - name: Install build dependencies
         run: |
           gem install bundler
