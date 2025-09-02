@@ -21,7 +21,13 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby-version }}
-          bundler-cache: true
+          bundler-cache: false
+
+      - name: Configure Bundler
+        run: |
+          bundle config set --local frozen false
+          bundle config set --local deployment false
+          bundle config set --local path vendor/bundle
 
       - name: Install dependencies
         run: |
@@ -58,12 +64,13 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3.6'
-          bundler-cache: true
+          bundler-cache: false
 
       - name: Configure Bundler
         run: |
           bundle config set --local frozen false
           bundle config set --local deployment false
+          bundle config set --local path vendor/bundle
 
       - name: Install dependencies
         run: |
