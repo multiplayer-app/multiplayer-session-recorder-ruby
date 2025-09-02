@@ -36,6 +36,14 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "Extracted version: $VERSION"
 
+      - name: Check current version
+        id: current_version
+        run: |
+          CURRENT_VERSION=$(ruby -e "require_relative 'lib/session_recorder/version'; puts Multiplayer::SessionRecorder::VERSION")
+          echo "current_version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          echo "Current version in file: $CURRENT_VERSION"
+          echo "Tag version: ${{ steps.version.outputs.version }}"
+
       - name: Update version file
         run: |
           # Update the version in lib/session_recorder/version.rb
@@ -54,9 +62,16 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add lib/session_recorder/version.rb
-          git commit -m "chore: bump version to ${{ steps.version.outputs.version }}"
-          git push origin main
+          
+          # Check if there are changes to commit
+          if git diff --quiet; then
+            echo "No changes to commit - version already up to date"
+          else
+            git add lib/session_recorder/version.rb
+            git commit -m "chore: bump version to ${{ steps.version.outputs.version }}"
+            git push origin main
+            echo "Version updated and pushed successfully"
+          fi
 
       - name: Configure Bundler
         run: |
