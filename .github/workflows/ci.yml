@@ -45,13 +45,30 @@ jobs:
 
       - name: Verify gem structure
         run: |
-          gem_file=$(ls *.gem | head -1)
-          if [ -n "$gem_file" ]; then
-            echo "Built gem: $gem_file"
-            gem specification "$gem_file" | grep -E "(name|version|summary)"
+          echo "Looking for gem files..."
+          ls -la pkg/ || echo "pkg/ directory not found"
+          ls -la *.gem || echo "No .gem files in current directory"
+          
+          # Look for gem files in pkg/ directory (default Rake location)
+          if [ -d "pkg" ]; then
+            gem_file=$(ls pkg/*.gem | head -1)
+            if [ -n "$gem_file" ]; then
+              echo "Found gem in pkg/: $gem_file"
+              gem specification "$gem_file" | grep -E "(name|version|summary)"
+            else
+              echo "No .gem files found in pkg/ directory"
+              exit 1
+            fi
           else
-            echo "No gem file found"
-            exit 1
+            # Fallback: look in current directory
+            gem_file=$(ls *.gem | head -1)
+            if [ -n "$gem_file" ]; then
+              echo "Found gem in current directory: $gem_file"
+              gem specification "$gem_file" | grep -E "(name|version|summary)"
+            else
+              echo "No .gem files found anywhere"
+              exit 1
+            fi
           fi
 
   lint:

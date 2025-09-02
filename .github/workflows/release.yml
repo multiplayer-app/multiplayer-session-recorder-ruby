@@ -72,13 +72,40 @@ jobs:
       - name: Build gem
         run: |
           bundle exec rake build
-          # Alternative: gem build multiplayer_otlp.gemspec
+          echo "Gem built successfully"
+          ls -la pkg/ || echo "pkg/ directory contents:"
+          ls -la *.gem || echo "No .gem files in current directory"
+
+      - name: Find and verify gem file
+        id: gem_file
+        run: |
+          # Look for gem files in pkg/ directory (default Rake location)
+          if [ -d "pkg" ]; then
+            gem_file=$(ls pkg/*.gem | head -1)
+            if [ -n "$gem_file" ]; then
+              echo "Found gem in pkg/: $gem_file"
+              echo "gem_path=$gem_file" >> $GITHUB_OUTPUT
+            else
+              echo "No .gem files found in pkg/ directory"
+              exit 1
+            fi
+          else
+            # Fallback: look in current directory
+            gem_file=$(ls *.gem | head -1)
+            if [ -n "$gem_file" ]; then
+              echo "Found gem in current directory: $gem_file"
+              echo "gem_path=$gem_file" >> $GITHUB_OUTPUT
+            else
+              echo "No .gem files found anywhere"
+              exit 1
+            fi
+          fi
 
       - name: Publish to RubyGems
         env:
           RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
         run: |
-          gem push pkg/multiplayer-session-recorder-${{ steps.version.outputs.version }}.gem
+          gem push "${{ steps.gem_file.outputs.gem_path }}"
 
       - name: Create GitHub Release
         uses: actions/create-release@v1
