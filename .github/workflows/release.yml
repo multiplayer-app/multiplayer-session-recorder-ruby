@@ -118,12 +118,21 @@ jobs:
 
       - name: Configure RubyGems credentials
         run: |
-          # Create .gemrc file with API key
+          # Create .gemrc file with correct API key format
           cat > ~/.gemrc << EOF
           ---
           :rubygems_api_key: ${{ secrets.RUBYGEMS_API_KEY }}
+          :backtrace: false
+          :bulk_threshold: 1000
+          :sources:
+          - https://rubygems.org/
+          :update_sources: true
+          :verbose: true
           EOF
-          echo "RubyGems credentials configured"
+          echo "RubyGems configuration created"
+          
+          # Also set the API key via environment variable
+          echo "RUBYGEMS_API_KEY=${{ secrets.RUBYGEMS_API_KEY }}" >> $GITHUB_ENV
 
       - name: Publish to RubyGems
         env:
@@ -135,38 +144,15 @@ jobs:
             exit 1
           fi
           
+          echo "API key length: ${#RUBYGEMS_API_KEY}"
           echo "Publishing gem: ${{ steps.gem_file.outputs.gem_path }}"
-          gem push "${{ steps.gem_file.outputs.gem_path }}" --key "$RUBYGEMS_API_KEY"
-
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ steps.version.outputs.version }}
-          body: |
-            ## What's Changed
-            
-            Release version ${{ steps.version.outputs.version }}
-            
-            ### Installation
-            
-            ```bash
-            gem install multiplayer-session-recorder
-            ```
-            
-            ### Usage
-            
-            ```ruby
-            require 'session-recorder'
-            
-            # Create exporter
-            exporter = SessionRecorder::Exporters.create_http_trace_exporter(
-              api_key: 'your-api-key'
-            )
-            ```
-            
-            See [README.md](README.md) for full documentation.
-          draft: false
-          prerelease: false
+          
+          # Try multiple authentication methods
+          if gem push "${{ steps.gem_file.outputs.gem_path }}" --key "$RUBYGEMS_API_KEY"; then
+            echo "Gem published successfully using --key flag"
+          elif gem push "${{ steps.gem_file.outputs.gem_path }}"; then
+            echo "Gem published successfully using .gemrc configuration"
+          else
+            echo "Failed to publish gem with all authentication methods"
+            exit 1
+          fi
