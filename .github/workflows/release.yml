@@ -116,11 +116,27 @@ jobs:
             fi
           fi
 
+      - name: Configure RubyGems credentials
+        run: |
+          # Create .gemrc file with API key
+          cat > ~/.gemrc << EOF
+          ---
+          :rubygems_api_key: ${{ secrets.RUBYGEMS_API_KEY }}
+          EOF
+          echo "RubyGems credentials configured"
+
       - name: Publish to RubyGems
         env:
           RUBYGEMS_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
         run: |
-          gem push "${{ steps.gem_file.outputs.gem_path }}"
+          # Verify API key is set
+          if [ -z "$RUBYGEMS_API_KEY" ]; then
+            echo "Error: RUBYGEMS_API_KEY is not set"
+            exit 1
+          fi
+          
+          echo "Publishing gem: ${{ steps.gem_file.outputs.gem_path }}"
+          gem push "${{ steps.gem_file.outputs.gem_path }}" --key "$RUBYGEMS_API_KEY"
 
       - name: Create GitHub Release
         uses: actions/create-release@v1
