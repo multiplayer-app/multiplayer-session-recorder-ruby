@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    multiplayer-session-recorder (0.0.5)
+    multiplayer-session-recorder (0.0.6)
       opentelemetry-exporter-otlp (~> 0.29.1)
       opentelemetry-sdk (~> 1.6)
 

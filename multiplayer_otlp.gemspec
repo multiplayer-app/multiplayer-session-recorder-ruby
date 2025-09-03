@@ -4,7 +4,7 @@ Gem::Specification.new do |s|
     s.name        = "multiplayer-session-recorder"
     s.version     = Multiplayer::SessionRecorder::VERSION
     s.summary     = "Multiplayer Fullstack Session Recorder"
-    s.files        = ["lib/session-recorder.rb"]
+    s.files        = ["lib/multiplayer-session-recorder.rb"]
     s.files       += Dir["lib/session_recorder/*.rb"]
     s.files       += Dir["lib/session_recorder/**/*.rb"]
 

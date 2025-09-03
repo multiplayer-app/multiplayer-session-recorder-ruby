@@ -1,0 +1,13 @@
+# frozen_string_literal: true
+
+source 'https://rubygems.org'
+
+# HTTP server framework
+gem 'sinatra', '~> 3.0'
+
+# Development dependencies
+group :development do
+  gem 'puma', '~> 6.0'  # Web server for Sinatra
+end
+
+gem 'multiplayer-session-recorder', path: '../..'
