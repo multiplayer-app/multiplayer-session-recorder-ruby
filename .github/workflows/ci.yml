@@ -106,9 +106,9 @@ jobs:
       - name: Check gem syntax
         run: |
           echo "Checking Ruby file syntax..."
-          ruby -c lib/session_recorder/version.rb
-          ruby -c lib/session_recorder/constants.rb
-          ruby -c lib/session_recorder/exporters.rb
+          ruby -c lib/multiplayer_session_recorder/version.rb
+          ruby -c lib/multiplayer_session_recorder/constants.rb
+          ruby -c lib/multiplayer_session_recorder/exporters.rb
           echo "All Ruby files have valid syntax"
 
       - name: Verify gemspec
