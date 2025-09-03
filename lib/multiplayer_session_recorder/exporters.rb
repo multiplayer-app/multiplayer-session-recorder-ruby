@@ -7,8 +7,9 @@ require_relative "exporters/grpc_logs_exporter"
 require_relative "exporters/trace_exporter_wrapper"
 require_relative "exporters/logs_exporter_wrapper"
 
-module SessionRecorder
-  module Exporters
+module Multiplayer
+  module SessionRecorder
+    module Exporters
     # Convenience method to create HTTP trace exporter
     def self.create_http_trace_exporter(config = {})
       SessionRecorderHttpTraceExporter.new(config)
@@ -37,6 +38,7 @@ module SessionRecorder
     # Convenience method to create logs exporter wrapper
     def self.create_logs_exporter_wrapper(exporter)
       SessionRecorderLogsExporterWrapper.new(exporter)
+    end
     end
   end
 end

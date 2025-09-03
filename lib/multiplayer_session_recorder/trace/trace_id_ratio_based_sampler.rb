@@ -2,8 +2,9 @@
 
 require "opentelemetry-sdk"
 
-module SessionRecorder
-  module Trace
+module Multiplayer
+  module SessionRecorder
+    module Trace
     class TraceIdRatioBasedSampler < OpenTelemetry::SDK::Trace::Samplers::TraceIdRatioBased
       def initialize(ratio = 0)
         @ratio = normalize(ratio)
@@ -18,8 +19,8 @@ module SessionRecorder
         trace_id_hex = trace_id.unpack1("H*")
         
         # Always sample if trace ID begins with debug prefixes
-        if trace_id_hex.start_with?(SessionRecorder::MULTIPLAYER_TRACE_DEBUG_PREFIX) ||
-           trace_id_hex.start_with?(SessionRecorder::MULTIPLAYER_TRACE_CONTINUOUS_DEBUG_PREFIX)
+        if trace_id_hex.start_with?(MULTIPLAYER_TRACE_DEBUG_PREFIX) ||
+           trace_id_hex.start_with?(MULTIPLAYER_TRACE_CONTINUOUS_DEBUG_PREFIX)
           return OpenTelemetry::SDK::Trace::Samplers::Result.new(
             decision: OpenTelemetry::SDK::Trace::Samplers::Decision::RECORD_AND_SAMPLE, 
             tracestate: tracestate
@@ -67,6 +68,7 @@ module SessionRecorder
         end
         accumulation
       end
+    end
     end
   end
 end

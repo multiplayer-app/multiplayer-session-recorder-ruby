@@ -3,7 +3,7 @@
 require 'net/http'
 require 'json'
 require 'uri'
-require_relative '../constants'
+require_relative 'constants'
 
 module Multiplayer
   module SessionRecorder
@@ -140,6 +140,23 @@ module Multiplayer
         response = http.request(request)
 
         unless response.is_a?(Net::HTTPSuccess)
+
+
+
+
+          
+          error_body = response.body rescue "Unable to read response body"
+          puts "❌ API Error Response:"
+          puts "   Status: #{response.code} #{response.message}"
+          puts "   URL: #{url}"
+          puts "   Method: #{method}"
+          puts "   Headers: #{request.to_hash}"
+          puts "   Request Body: #{request.body}" if request.body
+          puts "   Response Body: #{error_body}"
+
+
+
+
           raise RuntimeError, "Network response was not ok: #{response.code} #{response.message}"
         end
 

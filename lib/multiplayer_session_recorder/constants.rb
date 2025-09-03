@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
-module SessionRecorder
+module Multiplayer
+  module SessionRecorder
   MULTIPLAYER_TRACE_DEBUG_PREFIX = 'debdeb'
 
   MULTIPLAYER_TRACE_CONTINUOUS_DEBUG_PREFIX = 'cdbcdb'
@@ -76,4 +77,5 @@ module SessionRecorder
 
   # HTTP request/response size limits
   MULTIPLAYER_MAX_HTTP_REQUEST_RESPONSE_SIZE = 1024 * 1024 # 1MB
+  end
 end

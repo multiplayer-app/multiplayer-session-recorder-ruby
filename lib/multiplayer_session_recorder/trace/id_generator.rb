@@ -3,8 +3,9 @@
 require "opentelemetry-sdk"
 require_relative "../type/session_type"
 
-module SessionRecorder
-  module Trace
+module Multiplayer
+  module SessionRecorder
+    module Trace
     class SessionRecorderIdGenerator
       include OpenTelemetry::Trace
       
@@ -15,7 +16,7 @@ module SessionRecorder
         @generate_long_id = self.class.get_id_generator(16)
         @generate_short_id = self.class.get_id_generator(8)
         @session_short_id = ''
-        @session_type = SessionType::PLAIN
+        @session_type = Type::SessionType::PLAIN
       end
 
       def generate_trace_id
@@ -23,10 +24,10 @@ module SessionRecorder
 
         if @session_short_id && !@session_short_id.empty?
           session_type_prefix = case @session_type
-                               when SessionType::CONTINUOUS
-                                 SessionRecorder::MULTIPLAYER_TRACE_CONTINUOUS_DEBUG_PREFIX
+                               when Type::SessionType::CONTINUOUS
+                                 MULTIPLAYER_TRACE_CONTINUOUS_DEBUG_PREFIX
                                else
-                                 SessionRecorder::MULTIPLAYER_TRACE_DEBUG_PREFIX
+                                 MULTIPLAYER_TRACE_DEBUG_PREFIX
                                end
 
           prefix = "#{session_type_prefix}#{@session_short_id}"
@@ -42,7 +43,7 @@ module SessionRecorder
         @generate_short_id.call
       end
 
-      def set_session_id(session_short_id, session_type = SessionType::PLAIN)
+      def set_session_id(session_short_id, session_type = Type::SessionType::PLAIN)
         @session_short_id = session_short_id
         @session_type = session_type
       end
@@ -61,6 +62,7 @@ module SessionRecorder
           end.join
         end
       end
+    end
     end
   end
 end

@@ -1,4 +1,4 @@
-# SessionRecorder CLI Example
+# SessionRecorder HTTP Example
 
 ## Install dependencies
    ```bash

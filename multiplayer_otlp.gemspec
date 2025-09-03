@@ -1,12 +1,11 @@
-require_relative "lib/session_recorder/version"
+require_relative "lib/multiplayer_session_recorder/version"
 
 Gem::Specification.new do |s|
     s.name        = "multiplayer-session-recorder"
     s.version     = Multiplayer::SessionRecorder::VERSION
     s.summary     = "Multiplayer Fullstack Session Recorder"
-    s.files        = ["lib/multiplayer-session-recorder.rb"]
-    s.files       += Dir["lib/session_recorder/*.rb"]
-    s.files       += Dir["lib/session_recorder/**/*.rb"]
+    s.files = Dir["lib/**/*.rb"]
+    s.require_paths = ["lib"]
 
     s.authors     = ["Multiplayer Inc."]
     s.homepage    =

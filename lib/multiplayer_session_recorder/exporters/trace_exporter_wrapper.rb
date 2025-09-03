@@ -2,22 +2,23 @@
 
 require "opentelemetry/sdk"
 
-module SessionRecorder
-  module Exporters
-    class SessionRecorderLogsExporterWrapper
+module Multiplayer
+  module SessionRecorder
+    module Exporters
+    class SessionRecorderTraceExporterWrapper
       def initialize(exporter)
         @exporter = exporter
       end
 
-      def export(logs, timeout: nil)
-        # Filter out multiplayer attributes from logs
-        filtered_logs = logs.map do |log|
-          filtered_log = log.dup
-          filtered_log[:attributes] = filter_attributes(log[:attributes])
-          filtered_log
+      def export(spans, timeout: nil)
+        # Filter out multiplayer attributes from spans
+        filtered_spans = spans.map do |span|
+          filtered_span = span.dup
+          filtered_span[:attributes] = filter_attributes(span[:attributes])
+          filtered_span
         end
 
-        @exporter.export(filtered_logs, timeout: timeout)
+        @exporter.export(filtered_spans, timeout: timeout)
       end
 
       def shutdown(timeout: nil)
@@ -34,11 +35,12 @@ module SessionRecorder
         return {} if attributes.nil?
 
         attributes.each_with_object({}) do |(key, value), filtered|
-          unless key.to_s.start_with?(SessionRecorder::MULTIPLAYER_ATTRIBUTE_PREFIX)
+          unless key.to_s.start_with?(MULTIPLAYER_ATTRIBUTE_PREFIX)
             filtered[key] = value
           end
         end
       end
+    end
     end
   end
 end

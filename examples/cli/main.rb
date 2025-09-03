@@ -1,15 +1,20 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
-# Main CLI application demonstrating SessionRecorder usage
-# This example shows how to use SessionRecorder in a command-line application
-# Based on the TypeScript example from @multiplayer-app/session-recorder-node
+require 'bundler/inline'
 
 require_relative 'config'
 require_relative 'opentelemetry'
 
+gemfile(true) do
+  source 'https://rubygems.org'
+
+  gem 'multiplayer-session-recorder', path: './../..'
+end
+
 require 'multiplayer-session-recorder'
 require 'logger'
+require 'time'
 
 # Configure logging
 logger = Logger.new(STDOUT)
@@ -23,7 +28,7 @@ logger.level = case Config::LOG_LEVEL.upcase
 
 # Main application class
 class CLIApp
-  def initialize
+  def initialize(logger)
     @logger = logger
     @session_recorder = Multiplayer::SessionRecorder::SessionRecorder.new
     @running = false
@@ -64,7 +69,7 @@ class CLIApp
     @logger.info("🎬 Starting debug session...")
     
     @session_recorder.start(
-      Multiplayer::SessionRecorder::Trace::SessionType::PLAIN,
+      Multiplayer::SessionRecorder::Type::SessionType::PLAIN,
       {
         name: Config::SESSION_NAME,
         resource_attributes: {
@@ -108,8 +113,8 @@ class CLIApp
     @logger.info("🛑 Stopping debug session...")
     
     @session_recorder.stop({
-      comment: "CLI application completed successfully",
-      metadata: {
+      sessionAttributes: {
+        comment: "CLI application completed successfully",
         completion_time: Time.now.iso8601,
         work_performed: true
       }
@@ -170,19 +175,19 @@ class CLIApp
     @logger.info("📁 Simulating file operations...")
     
     # Create a span for file operations
-    OpenTelemetry::Trace.current_span.in_span("file_operations") do |span|
+    OpenTelemetry.tracer_provider.tracer('cli-app').in_span("file_operations") do |span|
       span.set_attribute("operation.type", "file_operations")
       span.set_attribute("operation.count", 3)
       
       # Simulate file reads
       sleep(0.1)
-      span.add_event("file.read", { filename: "config.json", size: 1024 })
+      span.add_event("file.read", attributes: { "filename" => "config.json", "size" => 1024 })
       
       sleep(0.05)
-      span.add_event("file.read", { filename: "data.csv", size: 2048 })
+      span.add_event("file.read", attributes: { "filename" => "data.csv", "size" => 2048 })
       
       sleep(0.08)
-      span.add_event("file.read", { filename: "log.txt", size: 512 })
+      span.add_event("file.read", attributes: { "filename" => "log.txt", "size" => 512 })
     end
   end
   
@@ -190,17 +195,17 @@ class CLIApp
   def simulate_network_calls
     @logger.info("🌐 Simulating network calls...")
     
-    OpenTelemetry::Trace.current_span.in_span("network_calls") do |span|
+    OpenTelemetry.tracer_provider.tracer('cli-app').in_span("network_calls") do |span|
       span.set_attribute("operation.type", "network_calls")
       span.set_attribute("endpoint.count", 2)
       
       # Simulate API call
       sleep(0.2)
-      span.add_event("api.call", { endpoint: "/api/users", method: "GET", status: 200 })
+      span.add_event("api.call", attributes: { "endpoint" => "/api/users", "method" => "GET", "status" => 200 })
       
       # Simulate database query
       sleep(0.15)
-      span.add_event("database.query", { query: "SELECT * FROM users", rows: 25 })
+      span.add_event("database.query", attributes: { "query" => "SELECT * FROM users", "rows" => 25 })
     end
   end
   
@@ -208,17 +213,17 @@ class CLIApp
   def simulate_data_processing
     @logger.info("🔢 Simulating data processing...")
     
-    OpenTelemetry::Trace.current_span.in_span("data_processing") do |span|
+    OpenTelemetry.tracer_provider.tracer('cli-app').in_span("data_processing") do |span|
       span.set_attribute("operation.type", "data_processing")
       span.set_attribute("data.size", 1000)
       
       # Simulate data transformation
       sleep(0.12)
-      span.add_event("data.transform", { records_processed: 1000, transformations: 5 })
+      span.add_event("data.transform", attributes: { "records_processed" => 1000, "transformations" => 5 })
       
       # Simulate validation
       sleep(0.08)
-      span.add_event("data.validate", { records_validated: 1000, errors: 0 })
+      span.add_event("data.validate", attributes: { "records_validated" => 1000, "errors" => 0 })
     end
   end
 end
@@ -236,7 +241,7 @@ if __FILE__ == $0
   puts
   
   # Run the application
-  app = CLIApp.new
+  app = CLIApp.new(logger)
   
   # Handle graceful shutdown
   Signal.trap("INT") do

@@ -5,7 +5,7 @@ require 'opentelemetry/sdk'
 require 'opentelemetry/exporter/otlp'
 
 # Add the lib directory to the load path for local development
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', '..', 'lib'))
+# $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', '..', 'lib'))
 
 require 'multiplayer-session-recorder'
 

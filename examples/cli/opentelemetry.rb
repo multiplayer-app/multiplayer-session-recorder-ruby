@@ -32,11 +32,11 @@ module OpenTelemetryConfig
       
       # Configure OpenTelemetry
       OpenTelemetry::SDK.configure do |c|
-        # Set custom trace ID generator
-        c.id_generator = @id_generator
-        
-        # Set custom sampler
-        c.sampler = @sampler
+        # Set custom tracer provider with id_generator and sampler
+        c.tracer_provider = OpenTelemetry::SDK::Trace::TracerProvider.new(
+          id_generator: @id_generator,
+          sampler: @sampler
+        )
         
         # Add trace exporters
         c.add_span_processor(
@@ -89,8 +89,12 @@ module OpenTelemetryConfig
     
     # Cleanup OpenTelemetry resources
     def cleanup
-      OpenTelemetry.tracer_provider.shutdown
-      puts "🧹 OpenTelemetry resources cleaned up" if Config::DEBUG
+      begin
+        OpenTelemetry.tracer_provider&.shutdown
+        puts "🧹 OpenTelemetry resources cleaned up" if Config::DEBUG
+      rescue => e
+        puts "⚠️ Error during cleanup: #{e.message}" if Config::DEBUG
+      end
     end
   end
 end

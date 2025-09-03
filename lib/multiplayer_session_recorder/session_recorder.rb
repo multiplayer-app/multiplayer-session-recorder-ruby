@@ -4,7 +4,7 @@ require 'net/http'
 require 'json'
 require 'uri'
 require_relative 'api_service'
-require_relative '../type/session_type'
+require_relative 'type/session_type'
 require_relative 'version'
 
 module Multiplayer
@@ -16,7 +16,7 @@ module Multiplayer
         @is_initialized = false
         @short_session_id = false
         @trace_id_generator = nil
-        @session_type = SessionType::PLAIN
+        @session_type = Type::SessionType::PLAIN
         @session_state = 'STOPPED'
         @api_service = ApiService.new
         @resource_attributes = {}
@@ -77,22 +77,25 @@ module Multiplayer
         @session_type = session_type
 
         session_payload[:name] ||= "Session on #{get_formatted_date(Time.now)}"
-        session_payload[:resource_attributes] = {
+        session_payload[:resourceAttributes] = {
           **@resource_attributes,
           **(session_payload[:resource_attributes] || {})
         }
+        # Remove the snake_case version to avoid duplication
+        session_payload.delete(:resource_attributes)
 
-        session = if @session_type == SessionType::CONTINUOUS
+        session = if @session_type == Type::SessionType::CONTINUOUS
                    @api_service.start_continuous_session(session_payload)
                  else
                    @api_service.start_session(session_payload)
                  end
 
-        unless session&.dig(:short_id)
+        short_id = session&.dig(:shortId) || session&.dig(:short_id)
+        unless short_id
           raise RuntimeError, 'Failed to start session'
         end
 
-        @short_session_id = session[:short_id]
+        @short_session_id = short_id
         @trace_id_generator.set_session_id(@short_session_id, @session_type)
         @session_state = 'STARTED'
       end
@@ -118,7 +121,7 @@ module Multiplayer
           raise RuntimeError, 'Session should be active or paused'
         end
 
-        unless @session_type == SessionType::CONTINUOUS
+        unless @session_type == Type::SessionType::CONTINUOUS
           raise RuntimeError, 'Invalid session type'
         end
 
@@ -138,7 +141,7 @@ module Multiplayer
           raise RuntimeError, 'Session should be active or paused'
         end
 
-        unless @session_type == SessionType::PLAIN
+        unless @session_type == Type::SessionType::PLAIN
           raise RuntimeError, 'Invalid session type'
         end
 
@@ -160,9 +163,9 @@ module Multiplayer
           raise RuntimeError, 'Session should be active or paused'
         end
 
-        if @session_type == SessionType::CONTINUOUS
+        if @session_type == Type::SessionType::CONTINUOUS
           @api_service.stop_continuous_session(@short_session_id)
-        elsif @session_type == SessionType::PLAIN
+        elsif @session_type == Type::SessionType::PLAIN
           @api_service.cancel_session(@short_session_id)
         end
       ensure
@@ -180,16 +183,18 @@ module Multiplayer
         end
 
         session_payload ||= {}
-        session_payload[:resource_attributes] = {
+        session_payload[:resourceAttributes] = {
           **(session_payload[:resource_attributes] || {}),
           **@resource_attributes
         }
+        # Remove the snake_case version to avoid duplication
+        session_payload.delete(:resource_attributes)
 
         result = @api_service.check_remote_session(session_payload)
         state = result[:state]
 
         if state == 'START' && @session_state != 'STARTED'
-          start(SessionType::CONTINUOUS, session_payload)
+          start(Type::SessionType::CONTINUOUS, session_payload)
         elsif state == 'STOP' && @session_state != 'STOPPED'
           stop
         end
