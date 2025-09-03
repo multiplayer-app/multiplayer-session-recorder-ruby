@@ -33,9 +33,7 @@ The Multiplayer Full Stack Session Recorder is a powerful tool that offers deep 
 ## Install
 
 ```bash
-npm i @multiplayer-app/session-recorder-node
-# or
-yarn add @multiplayer-app/session-recorder-node
+gem install multiplayer-session-recorder
 ```
 
 ## Set up backend services
@@ -63,37 +61,32 @@ Send OpenTelemetry data from your services to Multiplayer and optionally other d
 
 This is the quickest way to get started, but consider using an OpenTelemetry Collector (see [Option 2](#option-2-opentelemetry-collector) below) if you're scalling or a have a large platform.
 
-```javascript
-import {
-  SessionRecorderHttpTraceExporter,
-  SessionRecorderHttpLogsExporter,
-  SessionRecorderTraceExporterWrapper
-  SessionRecorderLogsExporterWrapper,
-} from "@multiplayer-app/session-recorder-node"
-import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http"
-import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http"
+```ruby
+require 'multiplayer-session-recorder'
+require 'opentelemetry/exporter/otlp'
 
-// set up Multiplayer exporters. Note: GRPC exporters are also available.
-// see: `SessionRecorderGrpcTraceExporter` and `SessionRecorderGrpcLogsExporter`
-const multiplayerTraceExporter = new SessionRecorderHttpTraceExporter({
-  apiKey: "MULTIPLAYER_OTLP_KEY", // note: replace with your Multiplayer OTLP key
-})
-const multiplayerLogExporter = new SessionRecorderHttpLogsExporter({
-  apiKey: "MULTIPLAYER_OTLP_KEY", // note: replace with your Multiplayer OTLP key
-})
-
-// Multiplayer exporter wrappers filter out session recording atrtributes before passing to provided exporter
-const traceExporter = new SessionRecorderTraceExporterWrapper(
-  // add any OTLP trace exporter
-  new OTLPTraceExporter({
-    // ...
-  })
+# set up Multiplayer exporters. Note: GRPC exporters are also available.
+# see: Multiplayer::SessionRecorder::Exporters::SessionRecorderGrpcTraceExporter 
+# and Multiplayer::SessionRecorder::Exporters::SessionRecorderGrpcLogsExporter
+multiplayer_trace_exporter = Multiplayer::SessionRecorder::Exporters::SessionRecorderHttpTraceExporter.new(
+  api_key: "MULTIPLAYER_OTLP_KEY" # note: replace with your Multiplayer OTLP key
 )
-const logExporter = new SessionRecorderLogsExporterWrapper(
-  // add any OTLP log exporter
-  new OTLPLogExporter({
-    // ...
-  })
+multiplayer_log_exporter = Multiplayer::SessionRecorder::Exporters::SessionRecorderHttpLogsExporter.new(
+  api_key: "MULTIPLAYER_OTLP_KEY" # note: replace with your Multiplayer OTLP key
+)
+
+# Multiplayer exporter wrappers filter out session recording attributes before passing to provided exporter
+trace_exporter = Multiplayer::SessionRecorder::Exporters::SessionRecorderTraceExporterWrapper.new(
+  # add any OTLP trace exporter
+  OpenTelemetry::Exporter::OTLP::Exporter.new(
+    # ...
+  )
+)
+log_exporter = Multiplayer::SessionRecorder::Exporters::SessionRecorderLogsExporterWrapper.new(
+  # add any OTLP log exporter
+  OpenTelemetry::Exporter::OTLP::LogsExporter.new(
+    # ...
+  )
 )
 ```
 
@@ -101,27 +94,26 @@ const logExporter = new SessionRecorderLogsExporterWrapper(
 
 If you're scalling or a have a large platform, consider running a dedicated collector. See the Multiplayer OpenTelemetry collector [repository](https://github.com/multiplayer-app/multiplayer-otlp-collector) which shows how to configure the standard OpenTelemetry Collector to send data to Multiplayer and optional other destinations.
 
-Add standard [OpenTelemetry code](https://opentelemetry.io/docs/languages/js/exporters/) to export OTLP data to your collector.
+Add standard [OpenTelemetry code](https://opentelemetry.io/docs/languages/ruby/exporters/) to export OTLP data to your collector.
 
 See a basic example below:
 
-```javascript
-import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-http"
-import { OTLPLogExporter } from "@opentelemetry/exporter-logs-otlp-http"
+```ruby
+require 'opentelemetry/exporter/otlp'
 
-const traceExporter = new OTLPTraceExporter({
-  url: "http://<OTLP_COLLECTOR_URL>/v1/traces",
+trace_exporter = OpenTelemetry::Exporter::OTLP::Exporter.new(
+  endpoint: "http://<OTLP_COLLECTOR_URL>/v1/traces",
   headers: {
-    // ...
+    # add your headers here
   }
-})
+)
 
-const logExporter = new OTLPLogExporter({
-  url: "http://<OTLP_COLLECTOR_URL>/v1/logs",
+log_exporter = OpenTelemetry::Exporter::OTLP::LogsExporter.new(
+  endpoint: "http://<OTLP_COLLECTOR_URL>/v1/logs",
   headers: {
-    // ...
+    # add your headers here
   }
-})
+)
 ```
 
 ### Capturing request/response and header content
@@ -136,35 +128,51 @@ In addition to sending traces and logs, you need to capture request and response
 
 The Multiplayer Session Recorder library provides utilities for capturing request, response and header content. See example below:
 
-```javascript
-import {
-  SessionRecorderHttpInstrumentationHooksNode,
-} from "@multiplayer-app/session-recorder-node"
-import {
-  getNodeAutoInstrumentations,
-} from "@opentelemetry/auto-instrumentations-node"
-import { type Instrumentation } from "@opentelemetry/instrumentation"
+```ruby
+require 'multiplayer-session-recorder'
 
-export const instrumentations: Instrumentation[] = getNodeAutoInstrumentations({
-  "@opentelemetry/instrumentation-http": {
-    enabled: true,
-    responseHook: SessionRecorderHttpInstrumentationHooksNode.responseHook({
-      // list of headers to mask in request/response headers
-      maskHeadersList: ["set-cookie"],
-      // set the maximum request/response content size (in bytes) that will be captured
-      // any request/response content greater than size will be not included in session recordings
-      maxPayloadSizeBytes: 500000,
-      isMaskBodyEnabled: false,
-      isMaskHeadersEnabled: true,
-    }),
-    requestHook: SessionRecorderHttpInstrumentationHooksNode.requestHook({
-      maskHeadersList: ["Authorization", "cookie"],
-      maxPayloadSizeBytes: 500000,
-      isMaskBodyEnabled: false,
-      isMaskHeadersEnabled: true,
-    }),
-  }
-})
+# Configure middleware options
+middleware_options = {
+  maskBody: ->(body) {
+    # Custom body masking logic
+    return body unless body.is_a?(String)
+    
+    begin
+      parsed = JSON.parse(body)
+      if parsed.is_a?(Hash)
+        parsed['password'] = '***MASKED***' if parsed.key?('password')
+        parsed['token'] = '***MASKED***' if parsed.key?('token')
+        parsed['secret'] = '***MASKED***' if parsed.key?('secret')
+      end
+      parsed.to_json
+    rescue JSON::ParserError
+      body
+    end
+  },
+  maskHeaders: ->(headers) {
+    # List of headers to mask in request/response headers
+    masked_headers = headers.dup
+    headers_to_mask = ['authorization', 'cookie', 'set-cookie', 'x-api-key']
+    
+    headers_to_mask.each do |header_name|
+      if masked_headers.key?(header_name.downcase)
+        masked_headers[header_name.downcase] = '***MASKED***'
+      end
+    end
+    
+    masked_headers
+  },
+  captureHeaders: true,
+  captureBody: true,
+  isMaskBodyEnabled: true,
+  isMaskHeadersEnabled: true,
+  # Set the maximum request/response content size (in bytes) that will be captured
+  # any request/response content greater than size will be not included in session recordings
+  maxPayloadSizeBytes: 500000
+}
+
+use Multiplayer::SessionRecorder::Middleware::RequestMiddleware, middleware_options
+use Multiplayer::SessionRecorder::Middleware::ResponseMiddleware, middleware_options
 ```
 
 ### Option 2: Multiplayer Proxy
@@ -175,7 +183,7 @@ The Multiplayer Proxy enables capturing request/response and header content with
 
 The Multiplayer Full Stack Session Recorder can be used inside the CLI apps.
 
-The [Multiplayer Time Travel Demo](https://github.com/multiplayer-app/multiplayer-time-travel-platform) includes an example [node.js CLI app](https://github.com/multiplayer-app/multiplayer-time-travel-platform/tree/main/clients/nodejs-cli-app).
+The [Multiplayer Time Travel Demo](https://github.com/multiplayer-app/multiplayer-time-travel-platform) includes examples for multiple languages. For Ruby, see the [CLI example](./examples/cli/) in this repository.
 
 See an additional example below.
 
@@ -183,46 +191,48 @@ See an additional example below.
 
 Use the following code below to initialize and run the session recorder.
 
-Example for Session Recorder initialization relies on [opentelemetry.ts](./examples/cli/src/opentelemetry.ts) file. Copy that file and put next to quick start code.
+Example for Session Recorder initialization relies on [opentelemetry.rb](./examples/cli/opentelemetry.rb) file. Copy that file and put next to quick start code.
 
-```javascript
-// IMPORTANT: set up OpenTelemetry
-// for an example see ./examples/cli/src/opentelemetry.ts
-// NOTE: for the code below to work copy ./examples/cli/src/opentelemetry.ts to ./opentelemetry.ts
-import { idGenerator } from "./opentelemetry"
-import SessionRecorder from "@multiplayer-app/session-recorder-node"
-import {
-  SessionRecorderHttpInstrumentationHooksNode,
-  SessionRecorderTraceIdRatioBasedSampler,
-  SessionRecorderIdGenerator,
-  SessionRecorderHttpTraceExporter,
-  SessionRecorderHttpLogsExporter,
-} from "@multiplayer-app/session-recorder-node"
+```ruby
+# IMPORTANT: set up OpenTelemetry
+# for an example see ./examples/cli/opentelemetry.rb
+# NOTE: for the code below to work copy ./examples/cli/opentelemetry.rb to ./opentelemetry.rb
+require_relative 'opentelemetry'
+require 'multiplayer-session-recorder'
 
-SessionRecorder.init({
-  apiKey: "MULTIPLAYER_OTLP_KEY", // note: replace with your Multiplayer OTLP key
-  traceIdGenerator: idGenerator,
-  resourceAttributes: {
-    serviceName: "{YOUR_APPLICATION_NAME}"
-    version: "{YOUR_APPLICATION_VERSION}",
-    environment: "{YOUR_APPLICATION_ENVIRONMENT}",
+# Initialize OpenTelemetry with SessionRecorder components
+opentelemetry_components = OpenTelemetryConfig.setup
+
+# Initialize SessionRecorder
+session_recorder = Multiplayer::SessionRecorder::SessionRecorder.new
+session_recorder.init({
+  api_key: "MULTIPLAYER_OTLP_KEY", # note: replace with your Multiplayer OTLP key
+  trace_id_generator: opentelemetry_components[:id_generator],
+  resource_attributes: {
+    component_name: "{YOUR_APPLICATION_NAME}",
+    component_version: "{YOUR_APPLICATION_VERSION}",
+    environment: "{YOUR_APPLICATION_ENVIRONMENT}"
   }
 })
 
-await sessionRecorder.start(
-  SessionType.PLAIN,
+session_recorder.start(
+  Multiplayer::SessionRecorder::Type::SessionType::PLAIN,
   {
     name: "This is test session",
-    sessionAttributes: {
-      accountId: "687e2c0d3ec8ef6053e9dc97",
-      accountName: "Acme Corporation"
+    resource_attributes: {
+      account_id: "687e2c0d3ec8ef6053e9dc97",
+      account_name: "Acme Corporation"
     }
   }
 )
 
-// do something here
+# do something here
 
-await sessionRecorder.stop()
+session_recorder.stop({
+  sessionAttributes: {
+    comment: "Session completed successfully"
+  }
+})
 ```
 
 Replace the placeholders with your application’s version, name, environment, and API key.
